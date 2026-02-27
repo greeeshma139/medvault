@@ -29,3 +29,4 @@ const appointmentSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Appointment", appointmentSchema);
+// used for the appoinment
