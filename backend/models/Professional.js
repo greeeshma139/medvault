@@ -1,20 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ProfessionalSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
     unique: true,
   },
   specialization: {
     type: String,
-    required: true,
+    required: false,
+    default: "General Practice",
   },
   licenseNumber: {
     type: String,
-    required: true,
-    unique: true,
+    required: false,
+    unique: false,
+    default: () => "LIC-" + Date.now(),
   },
   registrationNumber: String,
   yearsOfExperience: Number,
@@ -61,4 +63,4 @@ const ProfessionalSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('Professional', ProfessionalSchema);
+module.exports = mongoose.model("Professional", ProfessionalSchema);

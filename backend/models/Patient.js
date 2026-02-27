@@ -1,20 +1,22 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const PatientSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: "User",
     required: true,
     unique: true,
   },
   dateOfBirth: {
     type: Date,
-    required: true,
+    required: false,
+    default: null,
   },
   gender: {
     type: String,
-    enum: ['male', 'female', 'other'],
-    required: true,
+    enum: ["male", "female", "other", null],
+    required: false,
+    default: null,
   },
   address: {
     street: String,
@@ -25,7 +27,7 @@ const PatientSchema = new mongoose.Schema({
   },
   bloodType: {
     type: String,
-    enum: ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'],
+    enum: ["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"],
   },
   allergies: [String],
   medicalHistory: [String],
@@ -42,7 +44,7 @@ const PatientSchema = new mongoose.Schema({
   preferredDoctors: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Professional',
+      ref: "Professional",
     },
   ],
   createdAt: {
@@ -55,4 +57,4 @@ const PatientSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('Patient', PatientSchema);
+module.exports = mongoose.model("Patient", PatientSchema);

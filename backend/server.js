@@ -1,12 +1,19 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-const connectDB = require('./config/database');
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+const connectDB = require("./config/database");
 
 // Import routes
-const userRoutes = require('./routes/userRoutes');
-const patientRoutes = require('./routes/patientRoutes');
-const professionalRoutes = require('./routes/professionalRoutes');
+const userRoutes = require("./routes/userRoutes");
+const patientRoutes = require("./routes/patientRoutes");
+const professionalRoutes = require("./routes/professionalRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
+const feedbackRoutes = require("./routes/feedbackRoutes");
+const medicalRecordRoutes = require("./routes/medicalRecordRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const reminderRoutes = require("./routes/reminderRoutes");
+const consentRoutes = require("./routes/consentRoutes");
 
 const app = express();
 
@@ -19,13 +26,20 @@ app.use(express.urlencoded({ extended: true }));
 connectDB();
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/api/patients', patientRoutes);
-app.use('/api/professionals', professionalRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/patients", patientRoutes);
+app.use("/api/professionals", professionalRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/availability", availabilityRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/medical-records", medicalRecordRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reminders", reminderRoutes);
+app.use("/api/consents", consentRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Server is running' });
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ success: true, message: "Server is running" });
 });
 
 // Error handling middleware
@@ -33,7 +47,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: err.message || "Internal Server Error",
   });
 });
 

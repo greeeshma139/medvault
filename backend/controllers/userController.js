@@ -1,42 +1,65 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Patient = require('../models/Patient');
-const Professional = require('../models/Professional');
-const { sendVerificationEmail } = require('../config/mail');
-const crypto = require('crypto');
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const Patient = require("../models/Patient");
+const Professional = require("../models/Professional");
+const { sendVerificationEmail } = require("../config/mail");
+const crypto = require("crypto");
 
 // Generate JWT Token
 const generateToken = (id, email, role) => {
-  return jwt.sign(
-    { id, email, role },
-    process.env.JWT_SECRET,
-    { expiresIn: '30d' }
-  );
+  return jwt.sign({ id, email, role }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
 };
 
 // Register User
 exports.register = async (req, res) => {
   try {
-  const { firstName, lastName, email, password, confirmPassword, phoneNumber, role, dateOfBirth, gender } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmPassword,
+      phoneNumber,
+      role,
+      dateOfBirth,
+      gender,
+    } = req.body;
 
     // Validation
-    if (!firstName || !lastName || !email || !password || !phoneNumber || !role) {
-      return res.status(400).json({ success: false, message: 'Please fill all fields' });
+    if (
+      !firstName ||
+      !lastName ||
+      !email ||
+      !password ||
+      !phoneNumber ||
+      !role
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please fill all fields" });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
     }
 
     // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(409).json({ success: false, message: 'User already exists' });
+      return res
+        .status(409)
+        .json({ success: false, message: "User already exists" });
     }
 
     // Generate email verification token
-    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-    const emailVerificationTokenExpire = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+    const emailVerificationTokenExpire = new Date(
+      Date.now() + 24 * 60 * 60 * 1000,
+    ); // 24 hours
 
     // Create user
     user = new User({
@@ -53,22 +76,22 @@ exports.register = async (req, res) => {
     await user.save();
 
     // Send verification email
-    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email/${emailVerificationToken}`;
+    const verificationLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/verify-email/${emailVerificationToken}`;
     await sendVerificationEmail(email, verificationLink);
 
     // Create patient or professional profile
-    if (role === 'patient') {
+    if (role === "patient") {
       const patient = new Patient({
         userId: user._id,
         dateOfBirth: null,
         gender: null,
       });
       await patient.save();
-    } else if (role === 'professional') {
+    } else if (role === "professional") {
       const professional = new Professional({
         userId: user._id,
-        specialization: '',
-        licenseNumber: '',
+        specialization: "General",
+        licenseNumber: "LIC-" + Date.now(),
       });
       await professional.save();
     }
@@ -77,7 +100,7 @@ exports.register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully. Please verify your email.',
+      message: "User registered successfully. Please verify your email.",
       token,
       user: {
         id: user._id,
@@ -101,31 +124,39 @@ exports.login = async (req, res) => {
 
     // Validation
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide email and password' });
+      return res
+        .status(400)
+        .json({ success: false, message: "Please provide email and password" });
     }
 
     // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     // Check if user is active
     if (!user.isActive) {
-      return res.status(401).json({ success: false, message: 'User account is deactivated' });
+      return res
+        .status(401)
+        .json({ success: false, message: "User account is deactivated" });
     }
 
     // Match passwords
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const token = generateToken(user._id, user.email, user.role);
 
     res.status(200).json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: {
         id: user._id,
@@ -153,7 +184,12 @@ exports.verifyEmail = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired verification token' });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Invalid or expired verification token",
+        });
     }
 
     user.isEmailVerified = true;
@@ -161,7 +197,9 @@ exports.verifyEmail = async (req, res) => {
     user.emailVerificationTokenExpire = null;
     await user.save();
 
-    res.status(200).json({ success: true, message: 'Email verified successfully' });
+    res
+      .status(200)
+      .json({ success: true, message: "Email verified successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: error.message });
@@ -173,13 +211,17 @@ exports.getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     let profile = null;
-    if (user.role === 'patient') {
-      profile = await Patient.findOne({ userId: user._id }).populate('preferredDoctors');
-    } else if (user.role === 'professional') {
+    if (user.role === "patient") {
+      profile = await Patient.findOne({ userId: user._id }).populate(
+        "preferredDoctors",
+      );
+    } else if (user.role === "professional") {
       profile = await Professional.findOne({ userId: user._id });
     }
 
@@ -210,7 +252,9 @@ exports.updateProfile = async (req, res) => {
 
     let user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     if (firstName) user.firstName = firstName;
@@ -223,7 +267,7 @@ exports.updateProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Profile updated successfully',
+      message: "Profile updated successfully",
       user: {
         id: user._id,
         firstName: user.firstName,
