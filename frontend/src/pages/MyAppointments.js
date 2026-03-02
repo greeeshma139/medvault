@@ -33,9 +33,7 @@ export default function MyAppointments() {
       for (const appointment of Array.isArray(data) ? data : []) {
         if (appointment.status === "completed") {
           try {
-            const feedbackRes = await api.get(
-              `/feedback/${appointment._id}`,
-            );
+            const feedbackRes = await api.get(`/feedback/${appointment._id}`);
             if (feedbackRes.data) {
               feedbackMap[appointment._id] = true;
             } else {

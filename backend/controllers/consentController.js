@@ -13,7 +13,10 @@ async function expireOldConsents() {
     if (oldConsents.length === 0) return;
 
     const ids = oldConsents.map((c) => c._id);
-    await Consent.updateMany({ _id: { $in: ids } }, { status: "expired", revokedAt: now });
+    await Consent.updateMany(
+      { _id: { $in: ids } },
+      { status: "expired", revokedAt: now },
+    );
     console.log(`expired ${oldConsents.length} old consents`);
 
     // send notification to both parties

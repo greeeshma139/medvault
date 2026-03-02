@@ -461,7 +461,8 @@ export default function ConsentsManager() {
 
                 {user.role === "professional" &&
                   consent.status === "approved" &&
-                  (!consent.expiryDate || new Date(consent.expiryDate) > new Date()) && (
+                  (!consent.expiryDate ||
+                    new Date(consent.expiryDate) > new Date()) && (
                     <button
                       className="btn btn-primary"
                       onClick={() => handleViewPatientRecords(consent)}
@@ -470,11 +471,14 @@ export default function ConsentsManager() {
                       View Patient Records
                     </button>
                   )}
-                {user.role === "professional" && consent.status === "approved" && consent.expiryDate && new Date(consent.expiryDate) <= new Date() && (
-                  <p style={{ color: '#c0392b', marginTop: '1rem' }}>
-                    Access expired
-                  </p>
-                )}
+                {user.role === "professional" &&
+                  consent.status === "approved" &&
+                  consent.expiryDate &&
+                  new Date(consent.expiryDate) <= new Date() && (
+                    <p style={{ color: "#c0392b", marginTop: "1rem" }}>
+                      Access expired
+                    </p>
+                  )}
               </div>
             ))}
           </div>

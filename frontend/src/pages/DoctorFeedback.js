@@ -70,7 +70,8 @@ export default function DoctorFeedback() {
 
         if (res.data.length > 0) {
           const avgRating = (
-            res.data.reduce((sum, f) => sum + (f.rating || 0), 0) / res.data.length
+            res.data.reduce((sum, f) => sum + (f.rating || 0), 0) /
+            res.data.length
           ).toFixed(1);
           setStats({ avgRating, totalFeedback: res.data.length });
         } else {
@@ -79,7 +80,7 @@ export default function DoctorFeedback() {
       }
     } catch (error) {
       console.error("Feedback fetch error:", error);
-      // Don't show error toast if no feedback exists 
+      // Don't show error toast if no feedback exists
       if (error.response?.status !== 404) {
         toast.error(error.response?.data?.message || "Failed to load feedback");
       }
@@ -152,7 +153,9 @@ export default function DoctorFeedback() {
                 {feedback.map((f) => (
                   <div key={f._id} className="feedback-card">
                     <div className="feedback-header">
-                      <span className="rating-stars">{renderStars(f.rating)}</span>
+                      <span className="rating-stars">
+                        {renderStars(f.rating)}
+                      </span>
                     </div>
                     <p className="feedback-comment">{f.comment}</p>
                     <p className="feedback-date">

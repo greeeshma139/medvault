@@ -2,7 +2,15 @@ import React from "react";
 import { useAuth } from "../context/AuthContext";
 import { FiMenu, FiX, FiLogOut } from "react-icons/fi";
 
-const Sidebar = ({ sidebarOpen, setSidebarOpen, menuItems, activeSection, setActiveSection, onLogout, userRole = "professional" }) => {
+const Sidebar = ({
+  sidebarOpen,
+  setSidebarOpen,
+  menuItems,
+  activeSection,
+  setActiveSection,
+  onLogout,
+  userRole = "professional",
+}) => {
   const { user } = useAuth();
 
   return (

@@ -231,7 +231,7 @@ exports.getPatientRecords = async (req, res) => {
   try {
     const { patientId } = req.params;
     // expire any consents that have passed their expiry before proceeding
-    await require('./consentController').expireOldConsents?.();
+    await require("./consentController").expireOldConsents?.();
 
     // Check authorization
     if (req.user.role === "patient" && req.user.id !== patientId) {
