@@ -49,7 +49,7 @@ const ConsentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected", "revoked"],
+    enum: ["pending", "approved", "rejected", "revoked", "expired"],
     default: "pending",
   },
   approvedAt: Date,

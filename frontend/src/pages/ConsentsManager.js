@@ -24,7 +24,15 @@ export default function ConsentsManager() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    let intervalId;
+    // professionals should refresh periodically so expirations show up without manual reload
+    if (user.role === "professional") {
+      intervalId = setInterval(fetchData, 30 * 1000); // every 30 seconds
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [user]);
 
   const fetchData = async () => {
     try {
@@ -34,11 +42,17 @@ export default function ConsentsManager() {
           consentAPI.getConsents(),
           consentAPI.getPendingRequests(),
         ]);
-        setConsents(consentsRes.data.consents || []);
+        const all = consentsRes.data.consents || [];
+        setConsents(all);
         setPendingRequests(requestsRes.data.requests || []);
       } else {
         const res = await consentAPI.getMyConsents();
-        setConsents(res.data.consents || []);
+        // server already filters expired, but double-check on client
+        const now = new Date();
+        const active = (res.data.consents || []).filter((c) => {
+          return !c.expiryDate || new Date(c.expiryDate) > now;
+        });
+        setConsents(active);
       }
     } catch (error) {
       toast.error("Failed to load consent data");
@@ -342,7 +356,7 @@ export default function ConsentsManager() {
                   {request.expiryDate && (
                     <p>
                       <strong>Expires:</strong>{" "}
-                      {new Date(request.expiryDate).toLocaleDateString()}
+                      {new Date(request.expiryDate).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -430,7 +444,7 @@ export default function ConsentsManager() {
                   {consent.expiryDate && (
                     <p>
                       <strong>Expires:</strong>{" "}
-                      {new Date(consent.expiryDate).toLocaleDateString()}
+                      {new Date(consent.expiryDate).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -446,7 +460,8 @@ export default function ConsentsManager() {
                 )}
 
                 {user.role === "professional" &&
-                  consent.status === "approved" && (
+                  consent.status === "approved" &&
+                  (!consent.expiryDate || new Date(consent.expiryDate) > new Date()) && (
                     <button
                       className="btn btn-primary"
                       onClick={() => handleViewPatientRecords(consent)}
@@ -455,6 +470,11 @@ export default function ConsentsManager() {
                       View Patient Records
                     </button>
                   )}
+                {user.role === "professional" && consent.status === "approved" && consent.expiryDate && new Date(consent.expiryDate) <= new Date() && (
+                  <p style={{ color: '#c0392b', marginTop: '1rem' }}>
+                    Access expired
+                  </p>
+                )}
               </div>
             ))}
           </div>

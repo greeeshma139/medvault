@@ -230,6 +230,8 @@ exports.addDocument = async (req, res) => {
 exports.getPatientRecords = async (req, res) => {
   try {
     const { patientId } = req.params;
+    // expire any consents that have passed their expiry before proceeding
+    await require('./consentController').expireOldConsents?.();
 
     // Check authorization
     if (req.user.role === "patient" && req.user.id !== patientId) {
@@ -238,18 +240,20 @@ exports.getPatientRecords = async (req, res) => {
         .json({ success: false, message: "Not authorized" });
     }
 
-    // If professional, check if they have consent
+    // If professional, check if they have consent and it hasn't expired
     if (req.user.role === "professional") {
+      const now = new Date();
       const consent = await Consent.findOne({
         patientId,
         professionalId: req.user.id,
         status: "approved",
+        $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gt: now } }],
       });
 
       if (!consent) {
         return res.status(403).json({
           success: false,
-          message: "No consent to access these records",
+          message: "No valid consent to access these records",
         });
       }
     }

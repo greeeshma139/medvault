@@ -26,7 +26,7 @@ export default function FeedbackForm({ appointmentId, onClose }) {
       toast.success("Thank you for your feedback!");
       setComment("");
       setRating(5);
-      if (onClose) onClose();
+      if (onClose) onClose(true); // Pass true to indicate success
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to submit feedback");
     } finally {

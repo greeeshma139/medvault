@@ -1,14 +1,55 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import Sidebar from "../components/Sidebar";
 import "../styles/appointments.css";
+import "../styles/dashboard.css";
 import { toast } from "react-toastify";
+import {
+  FiFileText,
+  FiCalendar,
+  FiUsers,
+  FiBell,
+  FiLock,
+  FiSettings,
+} from "react-icons/fi";
 
 export default function DoctorFeedback() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ avgRating: 0, totalFeedback: 0 });
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState("feedback");
+
+  const menuItems = [
+    { id: "feedback", label: "Patient Feedback", icon: FiFileText },
+    { id: "appointments", label: "Appointments", icon: FiCalendar },
+    { id: "patients", label: "My Patients", icon: FiUsers },
+    { id: "notifications", label: "Notifications", icon: FiBell },
+    { id: "consents", label: "Access Requests", icon: FiLock },
+    { id: "settings", label: "Settings", icon: FiSettings },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    if (section === "appointments") {
+      navigate("/doctor-appointments");
+    } else if (section === "patients") {
+      navigate("/professional-dashboard");
+    } else if (section === "settings") {
+      navigate("/professional-dashboard");
+    } else if (section === "notifications" || section === "consents") {
+      navigate("/professional-dashboard");
+    }
+  };
 
   useEffect(() => {
     fetchFeedback();
@@ -53,47 +94,77 @@ export default function DoctorFeedback() {
 
   if (loading)
     return (
-      <div className="appointment-container">
-        <p>Loading feedback...</p>
+      <div className="new-dashboard-container">
+        <Sidebar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          menuItems={menuItems}
+          activeSection={activeSection}
+          setActiveSection={handleSectionChange}
+          onLogout={handleLogout}
+          userRole="professional"
+        />
+        <main className="main-content">
+          <div className="loading">Loading feedback...</div>
+        </main>
       </div>
     );
 
   return (
-    <div className="appointment-container">
-      <h2>Patient Feedback</h2>
+    <div className="new-dashboard-container">
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        menuItems={menuItems}
+        activeSection={activeSection}
+        setActiveSection={handleSectionChange}
+        onLogout={handleLogout}
+        userRole="professional"
+      />
 
-      {feedback.length > 0 && (
-        <div className="feedback-stats">
-          <div className="stat-card">
-            <h4>Average Rating</h4>
-            <p className="rating-value">{stats.avgRating}/5 ⭐</p>
-          </div>
-          <div className="stat-card">
-            <h4>Total Reviews</h4>
-            <p className="rating-value">{stats.totalFeedback}</p>
-          </div>
-        </div>
-      )}
-
-      {feedback.length === 0 ? (
-        <div className="empty-state">
-          <p>No feedback yet</p>
-        </div>
-      ) : (
-        <div className="feedback-grid">
-          {feedback.map((f) => (
-            <div key={f._id} className="feedback-card">
-              <div className="feedback-header">
-                <span className="rating-stars">{renderStars(f.rating)}</span>
-              </div>
-              <p className="feedback-comment">{f.comment}</p>
-              <p className="feedback-date">
-                {new Date(f.createdAt).toLocaleDateString()}
-              </p>
+      <main className="main-content">
+        <div className="content-wrapper">
+          <div className="content-section">
+            <div className="welcome-header">
+              <h1>Patient Feedback</h1>
+              <p>View ratings and feedback from your patients</p>
             </div>
-          ))}
+
+            {feedback.length > 0 && (
+              <div className="feedback-stats">
+                <div className="stat-card">
+                  <h4>Average Rating</h4>
+                  <p className="rating-value">{stats.avgRating}/5 ⭐</p>
+                </div>
+                <div className="stat-card">
+                  <h4>Total Reviews</h4>
+                  <p className="rating-value">{stats.totalFeedback}</p>
+                </div>
+              </div>
+            )}
+
+            {feedback.length === 0 ? (
+              <div className="empty-state">
+                <p>No feedback yet</p>
+              </div>
+            ) : (
+              <div className="feedback-grid">
+                {feedback.map((f) => (
+                  <div key={f._id} className="feedback-card">
+                    <div className="feedback-header">
+                      <span className="rating-stars">{renderStars(f.rating)}</span>
+                    </div>
+                    <p className="feedback-comment">{f.comment}</p>
+                    <p className="feedback-date">
+                      {new Date(f.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </main>
     </div>
   );
 }

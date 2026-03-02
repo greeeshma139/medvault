@@ -3,8 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
+import Sidebar from "../components/Sidebar";
 import "../styles/appointments.css";
+import "../styles/dashboard.css";
 import { toast } from "react-toastify";
+import {
+  FiCalendar,
+  FiFileText,
+  FiUsers,
+  FiBell,
+  FiLock,
+  FiSettings,
+} from "react-icons/fi";
 
 const DAYS = [
   "Monday",
@@ -26,8 +36,36 @@ export default function DoctorAvailability() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeSection, setActiveSection] = useState("availability");
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const menuItems = [
+    { id: "availability", label: "My Availability", icon: FiCalendar },
+    { id: "appointments", label: "Appointments", icon: FiCalendar },
+    { id: "patients", label: "My Patients", icon: FiUsers },
+    { id: "feedback", label: "Patient Feedback", icon: FiFileText },
+    { id: "notifications", label: "Notifications", icon: FiBell },
+    { id: "consents", label: "Access Requests", icon: FiLock },
+    { id: "settings", label: "Settings", icon: FiSettings },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    if (section === "appointments") {
+      navigate("/doctor-appointments");
+    } else if (section === "feedback") {
+      navigate("/doctor-feedback");
+    } else if (section === "patients" || section === "notifications" || section === "consents" || section === "settings") {
+      navigate("/professional-dashboard");
+    }
+  };
 
   useEffect(() => {
     fetchAvailability();
@@ -104,13 +142,29 @@ export default function DoctorAvailability() {
   };
 
   return (
-    <div className="appointment-container">
-      <h2>Manage Your Availability</h2>
+    <div className="new-dashboard-container">
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        menuItems={menuItems}
+        activeSection={activeSection}
+        setActiveSection={handleSectionChange}
+        onLogout={handleLogout}
+        userRole="professional"
+      />
 
-      <div className="availability-layout">
-        <div className="availability-form">
-          <h3>Add Time Slot</h3>
-          <form onSubmit={handleSubmit}>
+      <main className="main-content">
+        <div className="content-wrapper">
+          <div className="content-section">
+            <div className="welcome-header">
+              <h1>Manage Your Availability</h1>
+              <p>Set your available time slots for appointments</p>
+            </div>
+
+            <div className="availability-layout">
+              <div className="availability-form">
+                <h3>Add Time Slot</h3>
+                <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Day *</label>
               <select
@@ -211,6 +265,9 @@ export default function DoctorAvailability() {
                         try {
                           await api.delete(`/availability/${slot._id}`);
                           toast.success("Slot removed");
+                          // immediately update local state to remove slot
+                          setAvailability((prev) => prev.filter((s) => s._id !== slot._id));
+                          // also refresh from server in case other changes occured
                           fetchAvailability();
                         } catch (err) {
                           console.error('Delete availability error:', err);
@@ -226,8 +283,11 @@ export default function DoctorAvailability() {
               ))}
             </div>
           )}
-        </div>
+            </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
-    </div>
-  );
-}
+    );
+  }

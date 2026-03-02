@@ -34,12 +34,15 @@ export default function MyAppointments() {
         if (appointment.status === "completed") {
           try {
             const feedbackRes = await api.get(
-              `/feedback/appointment/${appointment._id}`,
+              `/feedback/${appointment._id}`,
             );
             if (feedbackRes.data) {
               feedbackMap[appointment._id] = true;
+            } else {
+              feedbackMap[appointment._id] = false;
             }
           } catch (error) {
+            console.log(`No feedback for appointment ${appointment._id}`);
             feedbackMap[appointment._id] = false;
           }
         }
@@ -71,12 +74,21 @@ export default function MyAppointments() {
     }
   };
 
-  const handleFeedbackClose = () => {
+  const handleFeedbackClose = (success = false) => {
+    if (success && feedbackId) {
+      // Immediately mark feedback as submitted
+      setFeedbackStatus((prev) => ({
+        ...prev,
+        [feedbackId]: true,
+      }));
+    }
     setFeedbackId(null);
-    // Refresh feedback status after submission
-    setTimeout(() => {
-      fetchAppointments();
-    }, 500);
+    // Refresh feedback status after submission to verify
+    if (success) {
+      setTimeout(() => {
+        fetchAppointments();
+      }, 1000);
+    }
   };
 
   if (loading)
@@ -134,12 +146,6 @@ export default function MyAppointments() {
                       >
                         Leave Feedback
                       </button>
-                    )}
-
-                  {a.status === "completed" &&
-                    feedbackStatus[a._id] &&
-                    feedbackId !== a._id && (
-                      <p className="feedback-submitted">✓ Feedback submitted</p>
                     )}
 
                   {feedbackId === a._id && (

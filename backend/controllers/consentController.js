@@ -2,6 +2,48 @@ const Consent = require("../models/Consent");
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 
+// helper to move already expired approved consents into expired status
+async function expireOldConsents() {
+  const now = new Date();
+  try {
+    const oldConsents = await Consent.find({
+      status: "approved",
+      expiryDate: { $lte: now },
+    });
+    if (oldConsents.length === 0) return;
+
+    const ids = oldConsents.map((c) => c._id);
+    await Consent.updateMany({ _id: { $in: ids } }, { status: "expired", revokedAt: now });
+    console.log(`expired ${oldConsents.length} old consents`);
+
+    // send notification to both parties
+    for (const c of oldConsents) {
+      await Notification.create({
+        userId: c.patientId,
+        type: "general",
+        title: "Consent Expired",
+        message: "A previously granted access to your records has expired.",
+        relatedEntityId: c._id,
+        relatedEntityType: "consent",
+        priority: "low",
+        sentVia: ["in_app"],
+      });
+      await Notification.create({
+        userId: c.professionalId,
+        type: "general",
+        title: "Consent Expired",
+        message: "Your access to patient records has expired.",
+        relatedEntityId: c._id,
+        relatedEntityType: "consent",
+        priority: "low",
+        sentVia: ["in_app"],
+      });
+    }
+  } catch (err) {
+    console.error("error expiring consents:", err);
+  }
+}
+
 // Request access to patient records
 exports.requestConsent = async (req, res) => {
   try {
@@ -96,6 +138,9 @@ exports.requestConsent = async (req, res) => {
 // Get pending consent requests for patient
 exports.getPendingRequests = async (req, res) => {
   try {
+    // expire any old consents before computing
+    await expireOldConsents();
+
     const requests = await Consent.find({
       patientId: req.user.id,
       status: "pending",
@@ -112,6 +157,8 @@ exports.getPendingRequests = async (req, res) => {
 // Get all consents for patient
 exports.getConsents = async (req, res) => {
   try {
+    await expireOldConsents();
+
     const consents = await Consent.find({ patientId: req.user.id })
       .populate("professionalId", "firstName lastName email")
       .sort({ createdAt: -1 });
@@ -125,9 +172,13 @@ exports.getConsents = async (req, res) => {
 // Get consents for professional (records they have access to)
 exports.getMyConsents = async (req, res) => {
   try {
+    await expireOldConsents();
+
+    const now = new Date();
     const consents = await Consent.find({
       professionalId: req.user.id,
       status: "approved",
+      $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gt: now } }],
     })
       .populate("patientId", "firstName lastName email")
       .sort({ createdAt: -1 });
@@ -185,6 +236,9 @@ exports.approveConsent = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// expose helper so other modules (e.g. record controller) can expire records lazily
+exports.expireOldConsents = expireOldConsents;
 
 // Reject consent request
 exports.rejectConsent = async (req, res) => {
